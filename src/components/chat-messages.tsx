@@ -585,7 +585,7 @@ export function ChatMessages({
           title={showReasoning ? '隐藏思考过程' : '显示思考过程'}
           aria-label="切换显示思考过程"
         >
-          {showReasoning ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+          {showReasoning ? <FaEye size={16} /> : <FaEyeSlash size={16} />}
         </button>
       </div>
 

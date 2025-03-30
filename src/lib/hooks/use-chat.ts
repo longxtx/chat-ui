@@ -57,90 +57,6 @@ export function useChat({
     }
   }, [abortController])
 
-  // 增强的文本处理函数，更有针对性地处理中文重复
-  const processText = (text: string): string => {
-    if (!text) return ''
-
-    // 用于检测重复项的函数
-    const removeDuplicates = (input: string): string => {
-      // 首先替换常见的重复符号
-      let result = input
-        .replace(/([,.!?，。！？、；：])\1+/g, '$1') // 重复标点
-        .replace(/([（\()])\1+/g, '$1') // 重复括号
-        .replace(/([）\)])\1+/g, '$1') // 重复括号
-
-      // 处理连续重复的单个中文字符
-      result = result.replace(/([一-龥])\1+/g, '$1')
-
-      // 处理重复的中文词语（2-4个字符）
-      const zhWords = result.match(/[一-龥]{2,4}/g) || []
-      for (const word of zhWords) {
-        if (word.length >= 2) {
-          // 创建一个匹配连续重复词语的正则表达式
-          const wordRegex = new RegExp(`(${word})\\s*\\1+`, 'g')
-          result = result.replace(wordRegex, '$1')
-        }
-      }
-
-      // 处理常见的重复短语模式（如"是是"、"的的"等）
-      const commonPatterns = [
-        '是是',
-        '的的',
-        '在在',
-        '了了',
-        '和和',
-        '与与',
-        '对对',
-        '这这',
-        '那那',
-        '有有',
-        '个个',
-        '中中',
-        '大大',
-        '小小',
-        '一一',
-        '二二',
-        '三三',
-        '日日',
-        '月月',
-        '年年',
-        '不不',
-        '也也',
-        '很很',
-        '都都',
-        '可可',
-        '能能',
-        '将将',
-        '会会'
-      ]
-
-      for (const pattern of commonPatterns) {
-        const patternRegex = new RegExp(pattern, 'g')
-        result = result.replace(patternRegex, pattern.charAt(0))
-      }
-
-      return result
-    }
-
-    // 应用重复检测
-    let processed = removeDuplicates(text)
-
-    // 处理更复杂的重复情况，如词语间隔重复
-    processed = processed
-      // 处理重复的词语，如"中国中国"
-      .replace(/([一-龥]{2,4})\s*\1/g, '$1')
-      // 处理"最大的最大的"这种模式
-      .replace(/([一-龥]+的)\s*\1/g, '$1')
-      // 处理"位于位于"这种动词重复
-      .replace(/([一-龥]{2}于)\s*\1/g, '$1')
-      // 处理"主体主体"这种名词重复
-      .replace(/([一-龥]{2}体)\s*\1/g, '$1')
-      // 处理"地级市地级市"这种专有名词重复
-      .replace(/([一-龥]{2,4}市)\s*\1/g, '$1')
-
-    return processed
-  }
-
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
@@ -229,8 +145,7 @@ export function useChat({
 
                 if (data.type === 'reasoning') {
                   // 更新思考过程
-                  // 处理接收到的思考过程
-                  const processedReasoning = processText(data.content)
+                  const processedReasoning = data.content
                   setReasoning(processedReasoning)
 
                   // 更新消息中的reasoning字段
@@ -248,8 +163,7 @@ export function useChat({
                   completedContent += data.content
                   _setCompletedContent(completedContent)
 
-                  // 实时处理并更新消息内容
-                  const processedContent = processText(completedContent)
+                  const processedContent = completedContent
 
                   setMessages(currentMessages => {
                     const updatedMessages = [...currentMessages]
@@ -270,7 +184,7 @@ export function useChat({
 
         // 流处理完成后，对完整内容再次进行处理
         if (completedContent) {
-          const finalProcessedContent = processText(completedContent)
+          const finalProcessedContent = completedContent
 
           setMessages(currentMessages => {
             const updatedMessages = [...currentMessages]

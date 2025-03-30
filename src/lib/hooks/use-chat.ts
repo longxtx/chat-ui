@@ -48,6 +48,9 @@ export function useChat({
     setMessages(msgs => [...msgs, message])
   }, [])
 
+  // 用于追踪 reader 状态
+  const [reader, setReader] = useState<ReadableStreamDefaultReader<Uint8Array> | null>(null)
+
   const stop = useCallback(() => {
     setIsLoading(false)
     // 中止正在进行的请求
@@ -55,7 +58,12 @@ export function useChat({
       abortController.abort()
       setAbortController(null)
     }
-  }, [abortController])
+    // 关闭流
+    if (reader) {
+      reader.cancel().catch(console.error)
+      setReader(null)
+    }
+  }, [abortController, reader])
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {

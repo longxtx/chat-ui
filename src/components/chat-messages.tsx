@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
+import { FaEye, FaEyeSlash } from 'react-icons/fa'
 
 export function ChatMessages({
   messages,
@@ -28,22 +29,33 @@ export function ChatMessages({
   const [welcomeTitle, setWelcomeTitle] = useState('欢迎使用聊天应用')
   const [welcomeMessage, setWelcomeMessage] = useState('开始一个新的对话，发送消息开始聊天吧。')
 
-  // 从API获取欢迎消息配置
+  // 从API获取欢迎消息配置和应用配置
   useEffect(() => {
-    const fetchWelcomeConfig = async () => {
+    const fetchConfig = async () => {
       try {
-        const response = await fetch('/api/welcome')
-        if (response.ok) {
-          const data = await response.json()
-          setWelcomeTitle(data.title)
-          setWelcomeMessage(data.message)
+        // 获取欢迎消息配置
+        const welcomeResponse = await fetch('/api/welcome')
+        if (welcomeResponse.ok) {
+          const welcomeData = await welcomeResponse.json()
+          setWelcomeTitle(welcomeData.title)
+          setWelcomeMessage(welcomeData.message)
+        }
+        
+        // 获取应用配置（包括SHOW_PROCESS）
+        const configResponse = await fetch('/api/config')
+        if (configResponse.ok) {
+          const configData = await configResponse.json()
+          // 只有在localStorage中没有用户设置时，才使用环境变量中的默认值
+          if (localStorage.getItem('showProcess') === null) {
+            setShowReasoning(configData.showProcess)
+          }
         }
       } catch (error) {
-        console.error('获取欢迎消息配置失败:', error)
+        console.error('获取配置失败:', error)
       }
     }
 
-    fetchWelcomeConfig()
+    fetchConfig()
   }, [])
 
   // 自动滚动到底部
@@ -548,14 +560,32 @@ export function ChatMessages({
     return null
   }
 
+  // 保存用户的显示设置到localStorage
+  const toggleShowReasoning = () => {
+    const newValue = !showReasoning;
+    setShowReasoning(newValue);
+    // 保存用户设置到localStorage
+    localStorage.setItem('showProcess', JSON.stringify(newValue));
+  }
+
+  // 从localStorage读取用户设置
+  useEffect(() => {
+    const savedSetting = localStorage.getItem('showProcess');
+    if (savedSetting !== null) {
+      setShowReasoning(JSON.parse(savedSetting));
+    }
+  }, []);
+
   return (
     <div className="relative px-4">
-      <div className="absolute top-0 right-0 z-1">
+      <div className="absolute top-2 right-2 z-10">
         <button
-          onClick={() => setShowReasoning(!showReasoning)}
-          className="text-xs px-2 py-1 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700"
+          onClick={toggleShowReasoning}
+          className="p-2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors duration-200 flex items-center justify-center"
+          title={showReasoning ? '隐藏思考过程' : '显示思考过程'}
+          aria-label="切换显示思考过程"
         >
-          {showReasoning ? '隐藏思考过程' : '显示思考过程'}
+          {showReasoning ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
         </button>
       </div>
 

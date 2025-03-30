@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agent Chat",
+  title: "Smart Consulting Advisor",
   description: "每个应用都应该有一个自己的Chat",
 };
 

@@ -83,7 +83,7 @@ export function ChatPanel({
             {isLoading ? (
               <button
                 onClick={stop}
-                className="inline-flex items-center justify-center rounded-full w-12 h-12 bg-zinc-800 dark:bg-zinc-700 text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full w-12 h-12 bg-zinc-800 dark:bg-zinc-700 text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors my-3"
                 type="button"
                 aria-label="停止生成"
               >
@@ -103,7 +103,7 @@ export function ChatPanel({
               </button>
             ) : (
               <button
-                className="inline-flex items-center justify-center rounded-full w-12 h-12 bg-zinc-800 dark:bg-zinc-700 text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full w-12 h-12 bg-zinc-800 dark:bg-zinc-700 text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors my-3"
                 type="submit"
                 disabled={!input.trim()}
                 aria-label="发送消息"

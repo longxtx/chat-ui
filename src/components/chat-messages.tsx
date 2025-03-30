@@ -25,6 +25,26 @@ export function ChatMessages({
   const [showReasoning, setShowReasoning] = useState(true)
   const [tooltipMessage, setTooltipMessage] = useState('')
   const [tooltipVisible, setTooltipVisible] = useState(false)
+  const [welcomeTitle, setWelcomeTitle] = useState('欢迎使用聊天应用')
+  const [welcomeMessage, setWelcomeMessage] = useState('开始一个新的对话，发送消息开始聊天吧。')
+
+  // 从API获取欢迎消息配置
+  useEffect(() => {
+    const fetchWelcomeConfig = async () => {
+      try {
+        const response = await fetch('/api/welcome')
+        if (response.ok) {
+          const data = await response.json()
+          setWelcomeTitle(data.title)
+          setWelcomeMessage(data.message)
+        }
+      } catch (error) {
+        console.error('获取欢迎消息配置失败:', error)
+      }
+    }
+
+    fetchWelcomeConfig()
+  }, [])
 
   // 自动滚动到底部
   useEffect(() => {
@@ -530,7 +550,7 @@ export function ChatMessages({
 
   return (
     <div className="relative px-4">
-      <div className="absolute top-0 right-4 z-10">
+      <div className="absolute top-0 right-0 z-1">
         <button
           onClick={() => setShowReasoning(!showReasoning)}
           className="text-xs px-2 py-1 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700"
@@ -542,9 +562,9 @@ export function ChatMessages({
       {messages.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-96">
           <div className="text-center">
-            <h1 className="text-2xl font-bold">欢迎使用聊天应用</h1>
+            <h1 className="text-2xl font-bold">{welcomeTitle}</h1>
             <p className="text-zinc-600 dark:text-zinc-400">
-              开始一个新的对话，发送消息开始聊天吧。
+              {welcomeMessage}
             </p>
           </div>
         </div>

@@ -34,6 +34,8 @@ export function useChat({
   const [reasoning, setReasoning] = useState<string>('')
   // 用于内部追踪完整内容
   const [_completedContent, _setCompletedContent] = useState<string>('') // eslint-disable-line @typescript-eslint/no-unused-vars
+  // 用于中止请求的控制器
+  const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -48,8 +50,12 @@ export function useChat({
 
   const stop = useCallback(() => {
     setIsLoading(false)
-    // 实际实现中这里应该有中止请求的逻辑
-  }, [])
+    // 中止正在进行的请求
+    if (abortController) {
+      abortController.abort()
+      setAbortController(null)
+    }
+  }, [abortController])
 
   // 增强的文本处理函数，更有针对性地处理中文重复
   const processText = (text: string): string => {
@@ -163,6 +169,10 @@ export function useChat({
         // 构建传递给API的消息数组
         const messagesToSend = [...messages, userMessage]
 
+        // 创建新的AbortController用于此次请求
+        const controller = new AbortController()
+        setAbortController(controller)
+
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: {
@@ -171,7 +181,8 @@ export function useChat({
           body: JSON.stringify({
             messages: messagesToSend,
             ...body
-          })
+          }),
+          signal: controller.signal
         })
 
         if (!response.ok) {

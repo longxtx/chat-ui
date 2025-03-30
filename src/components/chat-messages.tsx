@@ -588,7 +588,7 @@ export function ChatMessages({
                 {/* 用户消息 */}
                 {isUser && (
                   <div className="flex justify-end">
-                    <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-500 text-white">
+                    <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-500 text-white text-sm">
                       <div>{message.content}</div>
                     </div>
                   </div>
@@ -610,7 +610,7 @@ export function ChatMessages({
                             className="object-cover opacity-70"
                           />
                         </div>
-                        <div className="rounded-lg px-4 py-2 max-w-[90%] bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-xs font-mono">
+                        <div className="rounded-lg px-4 py-2 max-w-[90%] bg-white dark:bg-zinc-800 text-[#8b8b8b] dark:text-zinc-400 text-xs font-mono border border-gray-200 dark:border-zinc-700 shadow-sm">
                           <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-line">
                             <ReactMarkdown
                               rehypePlugins={[rehypeSanitize]}
@@ -750,8 +750,8 @@ export function ChatMessages({
                           className="object-cover"
                         />
                       </div>
-                      <div className="rounded-lg px-4 py-2 max-w-[80%] bg-gray-200 dark:bg-zinc-700 dark:text-zinc-200 relative">
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <div className="rounded-lg px-4 py-2 max-w-[80%] bg-white dark:bg-zinc-800 text-black dark:text-zinc-200 relative text-sm border border-gray-200 dark:border-zinc-700 shadow-sm">
+                        <div className="prose prose-xs dark:prose-invert max-w-none">
                           {htmlTable ? (
                             htmlTable
                           ) : (
@@ -772,22 +772,22 @@ export function ChatMessages({
                                   <p className="mb-2">{children}</p>
                                 ),
                                 h1: ({ children }) => (
-                                  <h1 className="text-2xl font-bold mb-4">
+                                  <h1 className="text-xl font-bold mb-4">
                                     {children}
                                   </h1>
                                 ),
                                 h2: ({ children }) => (
-                                  <h2 className="text-xl font-bold mb-3">
+                                  <h2 className="text-lg font-bold mb-3">
                                     {children}
                                   </h2>
                                 ),
                                 h3: ({ children }) => (
-                                  <h3 className="text-lg font-bold mb-2">
+                                  <h3 className="text-base font-bold mb-2">
                                     {children}
                                   </h3>
                                 ),
                                 h4: ({ children }) => (
-                                  <h4 className="text-base font-bold mb-2">
+                                  <h4 className="text-sm font-bold mb-2">
                                     {children}
                                   </h4>
                                 ),

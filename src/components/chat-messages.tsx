@@ -578,10 +578,10 @@ export function ChatMessages({
 
   return (
     <div className="relative px-4">
-      <div className="absolute top-2 right-2 z-10">
+      <div className="fixed top-4 right-4 z-50">
         <button
           onClick={toggleShowReasoning}
-          className="p-2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors duration-200 flex items-center justify-center"
+          className="p-2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors duration-200 flex items-center justify-center shadow-md"
           title={showReasoning ? '隐藏思考过程' : '显示思考过程'}
           aria-label="切换显示思考过程"
         >

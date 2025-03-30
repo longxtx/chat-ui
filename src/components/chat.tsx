@@ -111,7 +111,7 @@ export function Chat({
       setIsLoading(true)
 
       // 发送API请求
-      fetch('/api/chat', {
+      fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

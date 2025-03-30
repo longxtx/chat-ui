@@ -89,7 +89,7 @@ export function useChat({
         const controller = new AbortController()
         setAbortController(controller)
 
-        const response = await fetch('/api/chat', {
+        const response = await fetch('/api/chat/stream', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

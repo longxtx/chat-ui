@@ -5,6 +5,7 @@ export interface Message {
   content: string
   role: 'user' | 'assistant' | 'system'
   reasoning?: string
+  sources?: Array<{name: string, url: string}>
 }
 
 type ChatData = Record<string, unknown>
@@ -117,7 +118,8 @@ export function useChat({
         const assistantMessage: Message = {
           role: 'assistant',
           content: '',
-          reasoning: ''
+          reasoning: '',
+          sources: []
         }
         append(assistantMessage)
 
@@ -179,6 +181,40 @@ export function useChat({
                       updatedMessages[updatedMessages.length - 1]
                     if (lastMessage.role === 'assistant') {
                       lastMessage.content = processedContent
+                    }
+                    return updatedMessages
+                  })
+                } else if (data.type === 'source') {
+                  // 处理参考文件源信息
+                  setMessages(currentMessages => {
+                    const updatedMessages = [...currentMessages]
+                    const lastMessage =
+                      updatedMessages[updatedMessages.length - 1]
+                    if (lastMessage.role === 'assistant') {
+                      // 初始化sources数组（如果不存在）
+                      if (!lastMessage.sources) {
+                        lastMessage.sources = []
+                      }
+                      
+                      // 解析文件名和URL
+                      // 每两行一组，第一行是文件名，第二行是URL
+                      const content = data.content.trim()
+                      
+                      // 检查是否是URL行
+                      if (content.startsWith('http')) {
+                        // 获取最后添加的source
+                        const lastSourceIndex = lastMessage.sources.length - 1
+                        if (lastSourceIndex >= 0) {
+                          // 添加URL到最后一个source
+                          lastMessage.sources[lastSourceIndex].url = content
+                        }
+                      } else {
+                        // 添加新的source（只有文件名）
+                        lastMessage.sources.push({
+                          name: content,
+                          url: ''
+                        })
+                      }
                     }
                     return updatedMessages
                   })

@@ -1,4 +1,4 @@
-// 创建一个API端点，用于获取配置信息
+// 模拟从后端获取配置
 export async function GET() {
   try {
     // 从环境变量中获取配置

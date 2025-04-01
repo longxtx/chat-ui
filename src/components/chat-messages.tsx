@@ -24,6 +24,7 @@ export function ChatMessages({
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showReasoning, setShowReasoning] = useState(true)
+  const [showReferences, setShowReferences] = useState(true)
   const [tooltipMessage, setTooltipMessage] = useState('')
   const [tooltipVisible, setTooltipVisible] = useState(false)
   const [welcomeTitle, setWelcomeTitle] = useState('欢迎使用聊天应用')
@@ -31,31 +32,42 @@ export function ChatMessages({
 
   // 从API获取欢迎消息配置和应用配置
   useEffect(() => {
-    const fetchConfig = async () => {
+    // 显示推理过程
+    const showProcess = process.env.NEXT_PUBLIC_SHOW_PROCESS === 'true'
+    // 显示参考来源
+    const showReferences = process.env.NEXT_PUBLIC_SHOW_REFERENCES === 'true'
+    console.log('SHOW_PROCESS:', showProcess)
+    // 欢迎消息配置
+    const welcomeTitle = process.env.NEXT_PUBLIC_WELCOME_TITLE || '欢迎使用聊天应用'
+    // 显示话题说明
+    const welcomeMessage = process.env.NEXT_PUBLIC_WELCOME_MESSAGE || '开始一个新的对话，发送消息开始聊天吧。'
+
+
+    if (localStorage.getItem('showProcess') === null) {
+      setShowReasoning(showProcess)
+    }
+    setShowReferences(showReferences)
+    setWelcomeTitle(welcomeTitle)
+    setWelcomeMessage(welcomeMessage)
+
+    const fetchUserinfo = async () => {
       try {
         // 获取欢迎消息配置
-        const welcomeResponse = await fetch('/api/welcome')
-        if (welcomeResponse.ok) {
-          const welcomeData = await welcomeResponse.json()
-          setWelcomeTitle(welcomeData.title)
-          setWelcomeMessage(welcomeData.message)
+        const userinfoResponse = await fetch('/api/userinfo')
+        if (userinfoResponse.ok) {
+          const userData = await userinfoResponse.json()
+          console.log('UserName:', userData.username)
+          console.log('UserEmail:', userData.email)
+          console.log('UserID:', userData.id)
+          console.log('UserRole:', userData.is_admin)
+
         }
         
-        // 获取应用配置（包括SHOW_PROCESS）
-        const configResponse = await fetch('/api/config')
-        if (configResponse.ok) {
-          const configData = await configResponse.json()
-          // 只有在localStorage中没有用户设置时，才使用环境变量中的默认值
-          if (localStorage.getItem('showProcess') === null) {
-            setShowReasoning(configData.showProcess)
-          }
-        }
       } catch (error) {
-        console.error('获取配置失败:', error)
+        console.error('获取用户信息失败:', error)
       }
     }
-
-    fetchConfig()
+    fetchUserinfo()
   }, [])
 
   // 自动滚动到底部
@@ -1015,8 +1027,32 @@ export function ChatMessages({
                           )}
                       </div>
                     </div>
-                  </div>
-                )}
+                    
+                    {/* 参考文件源区域 - 显示在消息底部 */}
+                    { showReferences && message.sources && message.sources.length > 0 && (
+                      <div className="mt-3 pt-2 border-t border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50 rounded-md px-3 py-2 mb-12">
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">参考推理源：</p>
+                        <div className="flex flex-wrap gap-2">
+                          {message.sources.map((source, sourceIndex) => (
+                            <a
+                              key={sourceIndex}
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs bg-white dark:bg-zinc-700 px-2 py-1 rounded-md text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-zinc-600 transition-colors flex items-center gap-1 border border-gray-200 dark:border-zinc-600"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                              {source.name}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    </div>
+                )
+                }
               </div>
             )
           })}

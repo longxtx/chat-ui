@@ -113,13 +113,30 @@ export function processStreamLine(
             if (lastSourceIndex >= 0) {
               // 添加URL到最后一个source
               targetMessage.sources[lastSourceIndex].url = content
+              
+              // 检查是否已经存在相同文件名但URL为空的source
+              // 这是为了防止重复显示相同的文件
+              const fileName = targetMessage.sources[lastSourceIndex].name
+              const duplicateIndex = targetMessage.sources.findIndex((s, idx) => 
+                idx !== lastSourceIndex && s.name === fileName && !s.url
+              )
+              
+              // 如果找到重复的，则移除它
+              if (duplicateIndex !== -1) {
+                targetMessage.sources.splice(duplicateIndex, 1)
+              }
             }
           } else {
-            // 添加新的source（只有文件名）
-            targetMessage.sources.push({
-              name: content,
-              url: ''
-            })
+            // 检查是否已经存在相同文件名的source
+            const existingIndex = targetMessage.sources.findIndex(s => s.name === content)
+            
+            // 如果不存在，则添加新的source（只有文件名）
+            if (existingIndex === -1) {
+              targetMessage.sources.push({
+                name: content,
+                url: ''
+              })
+            }
           }
         }
         return updatedMessages

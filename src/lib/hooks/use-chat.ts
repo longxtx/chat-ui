@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { createEmptyAssistantMessage, processStream } from '../utils/stream-helpers'
 
 export interface Message {
   id?: string
@@ -115,12 +116,7 @@ export function useChat({
         }
 
         // 临时存储助手消息，用于追踪和更新
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: '',
-          reasoning: '',
-          sources: []
-        }
+        const assistantMessage = createEmptyAssistantMessage()
         append(assistantMessage)
 
         // 处理事件流
@@ -128,117 +124,16 @@ export function useChat({
         if (!reader) {
           throw new Error('无法读取响应流')
         }
-
-        const decoder = new TextDecoder()
-        let buffer = ''
-        let done = false
-        let completedContent = ''
-
-        while (!done) {
-          const { value, done: doneReading } = await reader.read()
-          done = doneReading
-
-          if (value) {
-            buffer += decoder.decode(value, { stream: true })
-
-            // 处理所有完整的数据行
-            const lines = buffer.split('\n\n')
-            buffer = lines.pop() || '' // 保留最后一个可能不完整的行
-
-            for (const line of lines) {
-              if (line.trim() === '') continue
-              if (!line.startsWith('data: ')) continue
-
-              const jsonString = line.substring(6) // 跳过 "data: "
-              try {
-                const data = JSON.parse(jsonString)
-
-                if (data.type === 'reasoning') {
-                  // 更新思考过程
-                  const processedReasoning = data.content
-                  setReasoning(processedReasoning)
-
-                  // 更新消息中的reasoning字段
-                  setMessages(currentMessages => {
-                    const updatedMessages = [...currentMessages]
-                    const lastMessage =
-                      updatedMessages[updatedMessages.length - 1]
-                    if (lastMessage.role === 'assistant') {
-                      lastMessage.reasoning = processedReasoning
-                    }
-                    return updatedMessages
-                  })
-                } else if (data.type === 'content') {
-                  // 累积内容以便后处理
-                  completedContent += data.content
-                  _setCompletedContent(completedContent)
-
-                  const processedContent = completedContent
-
-                  setMessages(currentMessages => {
-                    const updatedMessages = [...currentMessages]
-                    const lastMessage =
-                      updatedMessages[updatedMessages.length - 1]
-                    if (lastMessage.role === 'assistant') {
-                      lastMessage.content = processedContent
-                    }
-                    return updatedMessages
-                  })
-                } else if (data.type === 'source') {
-                  // 处理参考文件源信息
-                  setMessages(currentMessages => {
-                    const updatedMessages = [...currentMessages]
-                    const lastMessage =
-                      updatedMessages[updatedMessages.length - 1]
-                    if (lastMessage.role === 'assistant') {
-                      // 初始化sources数组（如果不存在）
-                      if (!lastMessage.sources) {
-                        lastMessage.sources = []
-                      }
-                      
-                      // 解析文件名和URL
-                      // 每两行一组，第一行是文件名，第二行是URL
-                      const content = data.content.trim()
-                      
-                      // 检查是否是URL行
-                      if (content.startsWith('http')) {
-                        // 获取最后添加的source
-                        const lastSourceIndex = lastMessage.sources.length - 1
-                        if (lastSourceIndex >= 0) {
-                          // 添加URL到最后一个source
-                          lastMessage.sources[lastSourceIndex].url = content
-                        }
-                      } else {
-                        // 添加新的source（只有文件名）
-                        lastMessage.sources.push({
-                          name: content,
-                          url: ''
-                        })
-                      }
-                    }
-                    return updatedMessages
-                  })
-                }
-              } catch (e) {
-                console.error('Error parsing event stream:', e)
-              }
-            }
-          }
-        }
-
-        // 流处理完成后，对完整内容再次进行处理
-        if (completedContent) {
-          const finalProcessedContent = completedContent
-
-          setMessages(currentMessages => {
-            const updatedMessages = [...currentMessages]
-            const lastMessage = updatedMessages[updatedMessages.length - 1]
-            if (lastMessage && lastMessage.role === 'assistant') {
-              lastMessage.content = finalProcessedContent
-            }
-            return updatedMessages
-          })
-        }
+        
+        // 保存reader状态以便可以中止
+        setReader(reader)
+        
+        // 使用共享的流处理函数
+        await processStream(reader, {
+          setMessages,
+          setReasoning,
+          setCompletedContent: _setCompletedContent
+        })
 
         setIsLoading(false)
         // 获取最后一条消息

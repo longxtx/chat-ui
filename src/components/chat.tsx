@@ -7,7 +7,8 @@ import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { ChatMessages } from './chat-messages'
 import { ChatPanel } from './chat-panel'
-
+// 使用共享的流处理函数
+import { processStream } from '@/lib/utils/stream-helpers'
 export function Chat({
   id,
   savedMessages = [],
@@ -145,109 +146,21 @@ export function Chat({
             }
             return updatedMessages
           })
-
-          // 读取流数据的函数
-          const decoder = new TextDecoder()
-          let buffer = ''
-          let completedContent = ''
-          let reasoningContent = ''
-
-          const readStream = async () => {
-            try {
-              const { value, done } = await reader.read()
-
-              if (done) {
-                // 流结束后，设置加载状态为false
-                setIsLoading(false)
-                return
-              }
-
-              buffer += decoder.decode(value, { stream: true })
-
-              // 处理完整的数据行
-              const lines = buffer.split('\n\n')
-              buffer = lines.pop() || ''
-
-              for (const line of lines) {
-                if (line.trim() === '' || !line.startsWith('data: ')) continue
-
-                const jsonString = line.substring(6) // 跳过 "data: "
-                try {
-                  const data = JSON.parse(jsonString)
-
-                  if (data.type === 'reasoning') {
-
-                    reasoningContent += data.content
-                    // 更新思考过程
-                    setMessages(currentMessages => {
-                      const updatedMessages = [...currentMessages]
-                      if (assistantMessageIndex < updatedMessages.length) {
-                        updatedMessages[assistantMessageIndex].reasoning =reasoningContent
-                          // data.content
-                          
-                      }
-                      return updatedMessages
-                    })
-                  } else if (data.type === 'content') {
-                    // 累积内容
-                    completedContent += data.content
-
-                    // 更新消息内容
-                    setMessages(currentMessages => {
-                      const updatedMessages = [...currentMessages]
-                      if (assistantMessageIndex < updatedMessages.length) {
-                        updatedMessages[assistantMessageIndex].content =
-                          completedContent
-                      }
-                      return updatedMessages
-                    })
-                  } else if (data.type === 'source') {
-                    // 处理参考文件源信息
-                    setMessages(currentMessages => {
-                      const updatedMessages = [...currentMessages]
-                      if (assistantMessageIndex < updatedMessages.length) {
-                        // 初始化sources数组（如果不存在）
-                        if (!updatedMessages[assistantMessageIndex].sources) {
-                          updatedMessages[assistantMessageIndex].sources = []
-                        }
-                        
-                        // 解析文件名和URL
-                        const content = data.content.trim()
-                        
-                        // 检查是否是URL行
-                        if (content.startsWith('http')) {
-                          // 获取最后添加的source
-                          const lastSourceIndex = updatedMessages[assistantMessageIndex].sources.length - 1
-                          if (lastSourceIndex >= 0) {
-                            // 添加URL到最后一个source
-                            updatedMessages[assistantMessageIndex].sources[lastSourceIndex].url = content
-                          }
-                        } else {
-                          // 添加新的source（只有文件名）
-                          updatedMessages[assistantMessageIndex].sources.push({
-                            name: content,
-                            url: ''
-                          })
-                        }
-                      }
-                      return updatedMessages
-                    })
-                  }
-                } catch (e) {
-                  console.error('Error parsing event stream:', e)
-                }
-              }
-
-              // 继续读取流
-              readStream()
-            } catch (error) {
+          
+          
+          
+          // 处理流式响应
+          processStream(reader, {
+            setMessages,
+            messageIndex: assistantMessageIndex
+          })
+            .then(() => {
+              setIsLoading(false)
+            })
+            .catch(error => {
               console.error('Error reading stream:', error)
               setIsLoading(false)
-            }
-          }
-
-          // 开始读取流
-          readStream()
+            })
         })
         .catch(error => {
           console.error('Regeneration error:', error)

@@ -1,4 +1,6 @@
 module.exports = {
+  // 移除 trailingSlash 和 exportPathMap
+  
   async rewrites() {
     console.log('Rewriting /api/* to http://localhost:8000/api/*')
     return [
@@ -19,5 +21,8 @@ module.exports = {
         ]
       }
     ]
-  }
+  },
+  // 添加这个配置来处理客户端路由
+  distDir: 'build',
+  output: 'standalone'
 }

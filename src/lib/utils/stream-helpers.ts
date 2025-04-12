@@ -4,7 +4,7 @@ import { Message } from '../hooks/use-chat'
  * 处理流式响应数据的类型
  */
 export interface StreamData {
-  type: 'reasoning' | 'content' | 'source'
+  type: 'reasoning' | 'content' | 'source' | 'status'
   content: string
 }
 
@@ -52,7 +52,11 @@ export function processStreamLine(
     const jsonString = line.substring(6) // 跳过 "data: "
     const data = JSON.parse(jsonString) as StreamData
 
-    if (data.type === 'reasoning') {
+    if (data.type === 'reasoning' || data.type === 'status') {
+
+      if (data.type ==='status') {
+        data.content= ' . '
+      }
       // 更新推理内容
       if(streaming_type === 'chunked') {
         reasoningContent += data.content

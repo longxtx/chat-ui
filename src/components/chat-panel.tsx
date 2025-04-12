@@ -67,7 +67,7 @@ export function ChatPanel({
           <div className="flex-grow relative">
             <textarea
               className="w-full resize-none rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-3 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-zinc-200"
-              placeholder="输入消息...（按回车发送，Shift+回车换行）"
+              placeholder="Enter message... (Press Enter to send, Shift + Enter to wrap)"
               rows={1}
               value={input}
               onChange={handleInputChange}

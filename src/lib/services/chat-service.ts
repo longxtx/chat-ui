@@ -70,7 +70,7 @@ export async function sendChatMessage({
     
     // 使用共享的流处理函数
     await processStream(reader, {
-      setMessages: onUpdate?.setMessages,
+      setMessages: onUpdate?.setMessages || (() => {}),
       setReasoning: onUpdate?.setReasoning,
       setCompletedContent: onUpdate?.setCompletedContent
     })

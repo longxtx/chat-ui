@@ -3,8 +3,54 @@
  * 提供自定义的表格渲染和组件配置
  */
 
-import ReactMarkdown, { Components } from 'react-markdown'
-import rehypeSanitize from 'rehype-sanitize'
+import React, { useState } from 'react';
+import ReactMarkdown, { Components } from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
+
+/**
+ * 可折叠内容组件 - 用于处理长文本，默认显示有限字符数
+ */
+export const CollapsibleContent: React.FC<{
+  content: string;
+  maxChars?: number;
+  className?: string;
+}> = ({ content, maxChars = 500, className = '' }) => {
+  const [expanded, setExpanded] = useState(false);
+  
+  // 检查内容是否需要被折叠
+  const needsCollapse = content.length > maxChars;
+  
+  // 如果不需要折叠或已经展开，则显示全部内容
+  if (!needsCollapse || expanded) {
+    return (
+      <div className={className}>
+        <ReactMarkdown rehypePlugins={[rehypeSanitize]} components={markdownComponents}>
+          {content}
+        </ReactMarkdown>
+      </div>
+    );
+  }
+  
+  // 否则，只显示有限字符数并添加"显示更多"按钮
+  const visibleContent = content.substring(0, maxChars);
+  
+  return (
+    <div className={className}>
+      <ReactMarkdown rehypePlugins={[rehypeSanitize]} components={markdownComponents}>
+        {visibleContent}
+      </ReactMarkdown>
+      <div className="relative py-4">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-zinc-800 opacity-70"></div>
+        <button 
+          onClick={() => setExpanded(true)} 
+          className="relative z-10 text-blue-500 hover:text-blue-700 text-sm font-medium"
+        >
+          显示更多 ({(content.length - maxChars).toLocaleString()} 字符已折叠)
+        </button>
+      </div>
+    </div>
+  );
+};
 
 /**
  * 直接渲染HTML表格

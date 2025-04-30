@@ -1,7 +1,7 @@
 'use client'
 
 import { Message } from '@/lib/hooks/use-chat'
-import { markdownComponents, renderHTMLTable } from '@/lib/utils/markdown-renderer'
+import { CollapsibleContent, markdownComponents, renderHTMLTable } from '@/lib/utils/markdown-renderer'
 import { cleanMarkdown, preprocessReasoning } from '@/lib/utils/markdown-utils'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
@@ -157,7 +157,7 @@ export function ChatMessages({
                 {/* 用户消息 */}
                 {isUser && (
                   <div className="flex justify-end">
-                    <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-500 text-white text-sm">
+                    <div className="rounded-lg px-4 py-2 max-w-[90%] bg-blue-500 text-white text-sm">
                       <div>{message.content}</div>
                     </div>
                   </div>
@@ -181,12 +181,10 @@ export function ChatMessages({
                         </div>
                         <div className="rounded-lg px-4 py-2 max-w-[90%] bg-white dark:bg-zinc-800 text-[#8b8b8b] dark:text-zinc-400 text-xs font-mono border border-gray-200 dark:border-zinc-700 shadow-sm">
                           <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown
-                              rehypePlugins={[rehypeSanitize]}
-                              components={markdownComponents}
-                            >
-                              {preprocessReasoning(message.reasoning)}
-                            </ReactMarkdown>
+                            <CollapsibleContent
+                              content={preprocessReasoning(message.reasoning)}
+                              maxChars={500}
+                            />
                           </div>
                         </div>
                       </div>
@@ -204,7 +202,7 @@ export function ChatMessages({
                           className="object-cover"
                         />
                       </div>
-                      <div className="rounded-lg px-4 py-2 max-w-[80%] bg-white dark:bg-zinc-800 text-black dark:text-zinc-200 relative text-sm border border-gray-200 dark:border-zinc-700 shadow-sm">
+                      <div className="rounded-lg px-4 py-2 max-w-[90%] bg-white dark:bg-zinc-800 text-black dark:text-zinc-200 relative text-sm border border-gray-200 dark:border-zinc-700 shadow-sm">
                         <div className="prose prose-xs dark:prose-invert max-w-none">
                           {htmlTable ? (
                             htmlTable
@@ -337,7 +335,7 @@ export function ChatMessages({
           {/* 加载指示器 */}
           {isLoading && (
             <div className="flex justify-start mb-4">
-              <div className="rounded-lg px-4 py-2 max-w-[80%] bg-gray-200 dark:bg-zinc-700 dark:text-zinc-200">
+              <div className="rounded-lg px-4 py-2 max-w-[90%] bg-gray-200 dark:bg-zinc-700 dark:text-zinc-200">
                 <div className="flex space-x-2">
                   <div className="w-2 h-2 rounded-full bg-zinc-400 animate-bounce"></div>
                   <div className="w-2 h-2 rounded-full bg-zinc-400 animate-bounce delay-75"></div>

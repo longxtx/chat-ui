@@ -23,17 +23,20 @@ export const CollapsibleContent: React.FC<{
   useEffect(() => {
     if (!content) return;
     
-    // 确定新增的内容部分
-    let newContent = '';
-    if (content.startsWith(processedContent)) {
-      newContent = content.slice(processedContent.length);
-    } else {
-      // 内容可能被完全替换，重置处理
-      newContent = content;
-      setContentSegments([]);
+    // 初始状态或内容完全变化的情况
+    if (processedContent === '' || !content.startsWith(processedContent)) {
+      setContentSegments([{
+        text: content,
+        expanded: content.length <= maxChars
+      }]);
+      setProcessedContent(content);
+      return;
     }
     
-    // 有新内容时进行处理
+    // 确定新增的内容部分
+    const newContent = content.slice(processedContent.length);
+    
+    // 只有当有新增内容时才添加新段落
     if (newContent.trim()) {
       // 检查是否需要折叠新内容
       const needsCollapse = newContent.length > maxChars;
@@ -46,10 +49,10 @@ export const CollapsibleContent: React.FC<{
           expanded: !needsCollapse
         }
       ]);
+      
+      // 更新已处理的内容
+      setProcessedContent(content);
     }
-    
-    // 更新已处理的内容
-    setProcessedContent(content);
   }, [content, maxChars, processedContent]);
   
   if (contentSegments.length === 0) {
@@ -81,7 +84,7 @@ export const CollapsibleContent: React.FC<{
                   }} 
                   className="relative z-10 text-blue-500 hover:text-blue-700 text-sm font-medium"
                 >
-                  显示更多 ({(segment.text.length - maxChars).toLocaleString()} 字符已折叠)
+                  Show more ({(segment.text.length - maxChars).toLocaleString()} characters folded)
                 </button>
               </div>
             </div>

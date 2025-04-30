@@ -7,8 +7,8 @@ import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { ChatMessages } from './chat-messages'
 import { ChatPanel } from './chat-panel'
-// 使用共享的流处理函数
-import { processStream } from '@/lib/utils/stream-helpers'
+import { regenerateMessage } from '@/lib/services/chat-service'
+
 export function Chat({
   id,
   savedMessages = [],
@@ -93,7 +93,7 @@ export function Chat({
     // 确保找到了用户和助手消息
     if (lastAssistantIndex === -1 || lastUserIndex === -1) return
 
-    // 将助手消息标记为正在重新生成（可选：添加UI指示）
+    // 将助手消息标记为正在重新生成
     const assistantMessageIndex = messages.length - 1 - lastAssistantIndex
 
     // 获取需要重新提交的用户消息
@@ -105,69 +105,17 @@ export function Chat({
 
     // 向API发送请求，使用相同的用户消息触发新的回复
     if (userMessageToResend) {
-      // 创建一个请求，将历史消息直到但不包括最后一条助手消息
-      const messagesToSend = messages.slice(0, assistantMessageIndex)
-
-      // 设置加载状态
-      setIsLoading(true)
-
-      // 发送API请求
-      fetch('/api/chat/stream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: messagesToSend,
-          ...requestBody
-        })
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
-          }
-
-          // 处理返回的事件流
-          const reader = response.body?.getReader()
-          if (!reader) {
-            throw new Error('无法读取响应流')
-          }
-
-          // 更新消息状态，将助手消息内容清空，准备接收新内容
-          setMessages(currentMessages => {
-            const updatedMessages = [...currentMessages]
-            if (assistantMessageIndex < updatedMessages.length) {
-              updatedMessages[assistantMessageIndex] = {
-                ...updatedMessages[assistantMessageIndex],
-                content: '',
-                reasoning: '',
-                sources: []
-              }
-            }
-            return updatedMessages
-          })
-          
-          
-          
-          // 处理流式响应
-          processStream(reader, {
-            setMessages,
-            messageIndex: assistantMessageIndex
-          })
-            .then(() => {
-              setIsLoading(false)
-            })
-            .catch(error => {
-              console.error('Error reading stream:', error)
-              setIsLoading(false)
-            })
-        })
-        .catch(error => {
-          console.error('Regeneration error:', error)
-          setIsLoading(false)
-          // 显示错误消息
+      // 使用聊天服务重新生成消息
+      regenerateMessage({
+        messages,
+        assistantMessageIndex,
+        body: requestBody,
+        setIsLoading,
+        setMessages,
+        onError: (error) => {
           toast.error(`重新生成失败: ${error.message}`)
-        })
+        }
+      })
     }
   }
 

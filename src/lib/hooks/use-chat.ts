@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
-import { createEmptyAssistantMessage, processStream } from '../utils/stream-helpers'
+import { createEmptyAssistantMessage } from '../utils/stream-helpers'
+import { sendChatMessage } from '../services/chat-service'
 
 export interface Message {
   id?: string
@@ -99,48 +100,37 @@ export function useChat({
         const controller = new AbortController()
         setAbortController(controller)
 
-        const response = await fetch('/api/chat/stream', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            messages: messagesToSend,
-            ...body
-          }),
-          signal: controller.signal
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
         // 临时存储助手消息，用于追踪和更新
         const assistantMessage = createEmptyAssistantMessage()
         append(assistantMessage)
 
-        // 处理事件流
-        const reader = response.body?.getReader()
-        if (!reader) {
-          throw new Error('无法读取响应流')
-        }
-        
-        // 保存reader状态以便可以中止
-        setReader(reader)
-        
-        // 使用共享的流处理函数
-        await processStream(reader, {
-          setMessages,
-          setReasoning,
-          setCompletedContent: _setCompletedContent
+        // 使用聊天服务发送消息
+        await sendChatMessage({
+          messages: messagesToSend,
+          body,
+          controller,
+          onStart: (newReader) => {
+            setReader(newReader)
+          },
+          onUpdate: {
+            setMessages,
+            setReasoning,
+            setCompletedContent: _setCompletedContent
+          },
+          onFinish: () => {
+            setIsLoading(false)
+            // 获取最后一条消息
+            const lastMessage = messages[messages.length - 1]
+            if (lastMessage && lastMessage.role === 'assistant') {
+              onFinish?.(lastMessage)
+            }
+          },
+          onError: (err) => {
+            setIsLoading(false)
+            setError(err)
+            onError?.(err)
+          }
         })
-
-        setIsLoading(false)
-        // 获取最后一条消息
-        const lastMessage = messages[messages.length - 1]
-        if (lastMessage && lastMessage.role === 'assistant') {
-          onFinish?.(lastMessage)
-        }
       } catch (err) {
         setIsLoading(false)
         const error = err as Error

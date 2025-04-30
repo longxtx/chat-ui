@@ -3,51 +3,91 @@
  * 提供自定义的表格渲染和组件配置
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 
 /**
- * 可折叠内容组件 - 用于处理长文本，默认显示有限字符数
+ * 可折叠内容组件 - 用于处理长文本，支持分段显示与折叠
+ * 可以检测新增内容并单独对超长段落进行折叠
  */
 export const CollapsibleContent: React.FC<{
   content: string;
   maxChars?: number;
   className?: string;
 }> = ({ content, maxChars = 500, className = '' }) => {
-  const [expanded, setExpanded] = useState(false);
+  // 用于跟踪已处理的内容和新内容
+  const [processedContent, setProcessedContent] = useState('');
+  const [contentSegments, setContentSegments] = useState<Array<{text: string, expanded: boolean}>>([]);
   
-  // 检查内容是否需要被折叠
-  const needsCollapse = content.length > maxChars;
+  useEffect(() => {
+    if (!content) return;
+    
+    // 确定新增的内容部分
+    let newContent = '';
+    if (content.startsWith(processedContent)) {
+      newContent = content.slice(processedContent.length);
+    } else {
+      // 内容可能被完全替换，重置处理
+      newContent = content;
+      setContentSegments([]);
+    }
+    
+    // 有新内容时进行处理
+    if (newContent.trim()) {
+      // 检查是否需要折叠新内容
+      const needsCollapse = newContent.length > maxChars;
+      
+      // 添加新内容段
+      setContentSegments(prev => [
+        ...prev,
+        { 
+          text: newContent,
+          expanded: !needsCollapse
+        }
+      ]);
+    }
+    
+    // 更新已处理的内容
+    setProcessedContent(content);
+  }, [content, maxChars, processedContent]);
   
-  // 如果不需要折叠或已经展开，则显示全部内容
-  if (!needsCollapse || expanded) {
-    return (
-      <div className={className}>
-        <ReactMarkdown rehypePlugins={[rehypeSanitize]} components={markdownComponents}>
-          {content}
-        </ReactMarkdown>
-      </div>
-    );
+  if (contentSegments.length === 0) {
+    return null;
   }
-  
-  // 否则，只显示有限字符数并添加"显示更多"按钮
-  const visibleContent = content.substring(0, maxChars);
   
   return (
     <div className={className}>
-      <ReactMarkdown rehypePlugins={[rehypeSanitize]} components={markdownComponents}>
-        {visibleContent}
-      </ReactMarkdown>
-      <div className="relative py-4">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-zinc-800 opacity-70"></div>
-        <button 
-          onClick={() => setExpanded(true)} 
-          className="relative z-10 text-blue-500 hover:text-blue-700 text-sm font-medium"
-        >
-          显示更多 ({(content.length - maxChars).toLocaleString()} 字符已折叠)
-        </button>
-      </div>
+      {contentSegments.map((segment, index) => (
+        <div key={index} className="mb-2">
+          {segment.expanded ? (
+            // 显示完整内容
+            <ReactMarkdown rehypePlugins={[rehypeSanitize]} components={markdownComponents}>
+              {segment.text}
+            </ReactMarkdown>
+          ) : (
+            // 显示部分内容并添加"显示更多"按钮
+            <div>
+              <ReactMarkdown rehypePlugins={[rehypeSanitize]} components={markdownComponents}>
+                {segment.text.substring(0, maxChars)}
+              </ReactMarkdown>
+              <div className="relative py-4">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-zinc-800 opacity-70"></div>
+                <button 
+                  onClick={() => {
+                    setContentSegments(prev => 
+                      prev.map((seg, i) => i === index ? {...seg, expanded: true} : seg)
+                    )
+                  }} 
+                  className="relative z-10 text-blue-500 hover:text-blue-700 text-sm font-medium"
+                >
+                  显示更多 ({(segment.text.length - maxChars).toLocaleString()} 字符已折叠)
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };

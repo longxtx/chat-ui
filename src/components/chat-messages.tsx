@@ -103,7 +103,8 @@ export function ChatMessages({
     // 第三步：处理特殊情况，如重复的中文字符
     cleanedText = cleanedText
       .replace(/([一-龥])\1+/g, '$1') // 处理重复的中文字符
-      .replace(/(\w+)\1+/g, '$1') // 处理英文中的连续重复(如DeepDeepSeek)
+      // 修改这一行，避免错误地处理单词中的连续字母
+      .replace(/(\b\w)(\1{2,})/g, '$1$1') // 只处理连续3个及以上相同字母的情况，保留2个
 
     // 确保换行符能够正确显示
     // 将\n转换为实际的换行，同时确保连续的换行符不会被重复
@@ -673,7 +674,7 @@ export function ChatMessages({
                           />
                         </div>
                         <div className="rounded-lg px-4 py-2 max-w-[90%] bg-white dark:bg-zinc-800 text-[#8b8b8b] dark:text-zinc-400 text-xs font-mono border border-gray-200 dark:border-zinc-700 shadow-sm">
-                          <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-line">
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
                             <ReactMarkdown
                               rehypePlugins={[rehypeSanitize]}
                               components={{

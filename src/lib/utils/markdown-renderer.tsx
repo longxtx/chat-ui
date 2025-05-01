@@ -41,7 +41,7 @@ export const CollapsibleContent: React.FC<{
       // 检查是否需要折叠新内容
       const needsCollapse = newContent.length > maxChars;
       
-      // 添加新内容段
+      // 添加新内容段，不改变前一个段落的折叠状态
       setContentSegments(prev => [
         ...prev,
         { 
@@ -420,4 +420,4 @@ export const markdownComponents: Components = {
       {children}
     </td>
   )
-} 
+}

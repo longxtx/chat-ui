@@ -2,12 +2,13 @@
 
 import { CHAT_ID } from '@/lib/constants'
 import { Message, useChat } from '@/lib/hooks/use-chat'
+import { authEvents, regenerateMessage } from '@/lib/services/chat-service'
 import { Model } from '@/lib/types/models'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ChatMessages } from './chat-messages'
 import { ChatPanel } from './chat-panel'
-import { regenerateMessage } from '@/lib/services/chat-service'
+import { LoginModal } from './login-modal'
 
 export function Chat({
   id,
@@ -20,6 +21,9 @@ export function Chat({
   query?: string
   models?: Model[]
 }) {
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [loginCallback, setLoginCallback] = useState<(() => void) | null>(null)
+
   const {
     messages,
     input,
@@ -54,13 +58,37 @@ export function Chat({
   // 使用ref来追踪初始渲染
   const initialRenderRef = useRef(true)
 
+  // 注册登录事件处理
+  useEffect(() => {
+    // 注册登录需求回调
+    authEvents.onNeedLogin = (callback) => {
+      setShowLoginModal(true)
+      setLoginCallback(() => callback)
+    }
+
+    return () => {
+      // 清理
+      authEvents.onNeedLogin = null
+    }
+  }, [])
+
+  // 处理登录成功
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false)
+    // 如果有回调，执行它
+    if (loginCallback) {
+      loginCallback()
+      setLoginCallback(null)
+    }
+  }
+
   // 只在初始渲染或id变化时更新消息
   useEffect(() => {
-    if (initialRenderRef.current || id) {
+    if (initialRenderRef.current) {
       setMessages(savedMessages)
       initialRenderRef.current = false
     }
-  }, [id, setMessages])
+  }, [id, setMessages]);
 
   const onQuerySelect = (query: string) => {
     append({
@@ -140,6 +168,13 @@ export function Chat({
         query={query}
         append={append}
         models={models}
+      />
+      
+      {/* 登录模态框 */}
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
+        onLoginSuccess={handleLoginSuccess} 
       />
     </div>
   )

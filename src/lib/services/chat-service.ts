@@ -1,6 +1,29 @@
 import { Message } from '../hooks/use-chat'
 import { processStream } from '../utils/stream-helpers'
 
+// 获取认证token并创建headers
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+  
+  // 确保代码在浏览器环境中运行
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token')
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+  }
+  
+  return headers
+}
+
+// 添加一个全局事件总线，用于触发登录框显示
+export const authEvents = {
+  // 当需要登录时触发
+  onNeedLogin: null as ((callback: () => void) => void) | null,
+}
+
 /**
  * 发送聊天消息的参数接口
  */
@@ -45,15 +68,40 @@ export async function sendChatMessage({
   try {
     const response = await fetch('/api/chat/stream', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         messages,
         ...body
       }),
       signal: controller?.signal
     })
+
+    // 检查是否未登录（状态码401表示未授权）
+    if (response.status === 401) {
+      // 如果有注册的登录回调，则触发它
+      if (authEvents.onNeedLogin) {
+        // 创建一个Promise，等待登录成功后重试
+        return new Promise((resolve) => {
+          // 添加非空断言或条件检查
+          if (authEvents.onNeedLogin) {
+            authEvents.onNeedLogin(() => {
+              // 登录成功后重新发送请求
+              sendChatMessage({
+                messages,
+                body,
+                controller,
+                onStart,
+                onUpdate,
+                onFinish,
+                onError
+              }).then(resolve)
+            })
+          }
+        })
+      } else {
+        throw new Error('需要登录才能继续')
+      }
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -102,15 +150,37 @@ export function regenerateMessage({
   // 发送API请求
   fetch('/api/chat/stream', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({
       messages: messagesToSend,
       ...body
     })
   })
     .then(response => {
+      // 检查是否未登录（状态码401表示未授权）
+      if (response.status === 401) {
+        // 如果有注册的登录回调，则触发它
+        if (authEvents.onNeedLogin) {
+          // 添加非空断言或条件检查
+          if (authEvents.onNeedLogin) {
+            authEvents.onNeedLogin(() => {
+              // 登录成功后重新尝试
+              regenerateMessage({
+                messages,
+                assistantMessageIndex,
+                body,
+                setIsLoading,
+                setMessages,
+                onError
+              })
+            })
+          }
+          return
+        } else {
+          throw new Error('需要登录才能继续')
+        }
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }

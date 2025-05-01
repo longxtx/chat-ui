@@ -78,32 +78,63 @@ export async function sendChatMessage({
 
     // 检查是否未登录（状态码401表示未授权）
     if (response.status === 401) {
+      console.log('检测到401未授权状态，准备触发登录弹窗')
       // 如果有注册的登录回调，则触发它
       if (authEvents.onNeedLogin) {
         // 创建一个Promise，等待登录成功后重试
         return new Promise((resolve) => {
-          // 添加非空断言或条件检查
-          if (authEvents.onNeedLogin) {
-            authEvents.onNeedLogin(() => {
-              // 登录成功后重新发送请求
-              sendChatMessage({
-                messages,
-                body,
-                controller,
-                onStart,
-                onUpdate,
-                onFinish,
-                onError
-              }).then(resolve)
-            })
-          }
+          // 使用非空断言操作符
+          authEvents.onNeedLogin!(() => {
+            console.log('登录成功，重新发送请求')
+            // 登录成功后重新发送请求
+            sendChatMessage({
+              messages,
+              body,
+              controller,
+              onStart,
+              onUpdate,
+              onFinish,
+              onError
+            }).then(resolve)
+          })
         })
       } else {
         throw new Error('需要登录才能继续')
       }
     }
 
+    // 检查响应是否包含错误信息
     if (!response.ok) {
+      // 尝试解析错误响应
+      try {
+        const errorData = await response.clone().json()
+        // 检查是否包含未登录相关的错误码
+        if (errorData.code === 'not_authenticated' || 
+            errorData.detail?.includes('用户未登录') || 
+            errorData.message?.includes('未登录')) {
+          console.log('检测到未登录错误信息，准备触发登录弹窗')
+          if (authEvents.onNeedLogin) {
+            return new Promise((resolve) => {
+              authEvents.onNeedLogin!(() => {
+                console.log('登录成功，重新发送请求')
+                sendChatMessage({
+                  messages,
+                  body,
+                  controller,
+                  onStart,
+                  onUpdate,
+                  onFinish,
+                  onError
+                }).then(resolve)
+              })
+            })
+          }
+        }
+      } catch (parseError) {
+        // 解析错误响应失败，继续抛出原始错误
+        console.error('解析错误响应失败:', parseError)
+      }
+      
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
@@ -156,32 +187,60 @@ export function regenerateMessage({
       ...body
     })
   })
-    .then(response => {
+    .then(async response => {
       // 检查是否未登录（状态码401表示未授权）
       if (response.status === 401) {
+        console.log('重新生成消息时检测到401未授权状态，准备触发登录弹窗')
         // 如果有注册的登录回调，则触发它
         if (authEvents.onNeedLogin) {
-          // 添加非空断言或条件检查
-          if (authEvents.onNeedLogin) {
-            authEvents.onNeedLogin(() => {
-              // 登录成功后重新尝试
-              regenerateMessage({
-                messages,
-                assistantMessageIndex,
-                body,
-                setIsLoading,
-                setMessages,
-                onError
-              })
+          authEvents.onNeedLogin(() => {
+            console.log('登录成功，重新尝试生成消息')
+            // 登录成功后重新尝试
+            regenerateMessage({
+              messages,
+              assistantMessageIndex,
+              body,
+              setIsLoading,
+              setMessages,
+              onError
             })
-          }
+          })
           return
         } else {
           throw new Error('需要登录才能继续')
         }
       }
 
+      // 检查响应是否包含错误信息
       if (!response.ok) {
+        // 尝试解析错误响应
+        try {
+          const errorData = await response.clone().json()
+          // 检查是否包含未登录相关的错误码
+          if (errorData.code === 'not_authenticated' || 
+              errorData.detail?.includes('用户未登录') || 
+              errorData.message?.includes('未登录')) {
+            console.log('检测到未登录错误信息，准备触发登录弹窗')
+            if (authEvents.onNeedLogin) {
+              authEvents.onNeedLogin(() => {
+                console.log('登录成功，重新尝试生成消息')
+                regenerateMessage({
+                  messages,
+                  assistantMessageIndex,
+                  body,
+                  setIsLoading,
+                  setMessages,
+                  onError
+                })
+              })
+              return
+            }
+          }
+        } catch (parseError) {
+          // 解析错误响应失败，继续抛出原始错误
+          console.error('解析错误响应失败:', parseError)
+        }
+        
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 

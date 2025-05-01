@@ -306,7 +306,7 @@ export function ChatMessages({
                     {/* 参考文件源区域 - 显示在消息底部 */}
                     { showReferences && message.sources && message.sources.length > 0 && (
                       <div className={`${index === messages.length - 1 ? 'mt-8' : 'mt-2'} rounded-md py-2 mb-12`}>
-                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">参考推理源：</p>
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Reference reasoning source：</p>
                         <div className="flex flex-wrap gap-2">
                           {message.sources.map((source, sourceIndex) => (
                             <a

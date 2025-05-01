@@ -48,7 +48,6 @@ export function processStreamLine(
   state: { completedContent: string; reasoningContent: string }
 ): { completedContent: string; reasoningContent: string } {
   if (line.trim() === '' || !line.startsWith('data: ')) return state
-  console.log('Processing line:', line)
   const { setMessages, setReasoning, setCompletedContent } = options
   let { completedContent, reasoningContent } = state
   const streaming_type = process.env.NEXT_PUBLIC_STREAMING_TYPE

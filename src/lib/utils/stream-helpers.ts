@@ -4,8 +4,12 @@ import { Message } from '../hooks/use-chat'
  * 处理流式响应数据的类型
  */
 export interface StreamData {
-  type: 'reasoning' | 'content' | 'source' | 'status'
-  content: string
+  type: 'reasoning' | 'content' | 'source' | 'status' | 'files'
+  content: string | {
+    fileName: string
+    filePath: string
+    [key: string]: unknown
+  }
 }
 
 /**
@@ -44,7 +48,7 @@ export function processStreamLine(
   state: { completedContent: string; reasoningContent: string }
 ): { completedContent: string; reasoningContent: string } {
   if (line.trim() === '' || !line.startsWith('data: ')) return state
-
+  console.log('Processing line:', line)
   const { setMessages, setReasoning, setCompletedContent } = options
   let { completedContent, reasoningContent } = state
   const streaming_type = process.env.NEXT_PUBLIC_STREAMING_TYPE
@@ -59,10 +63,10 @@ export function processStreamLine(
       }
       // 更新推理内容
       if(streaming_type === 'chunked') {
-        reasoningContent += data.content
+        reasoningContent += typeof data.content === 'string' ? data.content : JSON.stringify(data.content)
       }
       else{
-        reasoningContent = data.content
+        reasoningContent = typeof data.content === 'string' ? data.content : JSON.stringify(data.content)
       }
       
       setReasoning?.(reasoningContent)
@@ -107,6 +111,12 @@ export function processStreamLine(
             targetMessage.sources = []
           }
           
+          // 确保content是字符串类型
+          if (typeof data.content !== 'string') {
+            console.error('Expected string content for source type, got object')
+            return updatedMessages
+          }
+          
           // 解析文件名和URL
           const content = data.content.trim()
           
@@ -140,6 +150,41 @@ export function processStreamLine(
                 name: content,
                 url: ''
               })
+            }
+          }
+        }
+        return updatedMessages
+      })
+    } else if (data.type === 'files') {
+      // 处理新格式的文件源信息
+      setMessages(currentMessages => {
+        const updatedMessages = [...currentMessages]
+        const targetIndex = options.messageIndex ?? updatedMessages.length - 1
+        const targetMessage = updatedMessages[targetIndex]
+        
+        if (targetMessage && targetMessage.role === 'assistant') {
+          // 初始化sources数组（如果不存在）
+          if (!targetMessage.sources) {
+            targetMessage.sources = []
+          }
+          
+          // 从新格式中提取文件名和路径
+          const contentObj = data.content as { fileName: string; filePath: string }
+          if (typeof data.content === 'object' && contentObj.fileName && contentObj.filePath) {
+            const { fileName, filePath } = contentObj
+            
+            // 检查是否已经存在相同文件名的source
+            const existingIndex = targetMessage.sources.findIndex(s => s.name === fileName)
+            
+            // 如果不存在，则添加新的source
+            if (existingIndex === -1) {
+              targetMessage.sources.push({
+                name: fileName,
+                url: filePath
+              })
+            } else {
+              // 如果已存在，则更新路径
+              targetMessage.sources[existingIndex].url = filePath
             }
           }
         }

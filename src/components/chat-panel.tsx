@@ -45,7 +45,7 @@ export function ChatPanel({
   }
 
   return (
-    <div className="fixed bottom-0 inset-x-0 bg-gradient-to-t from-white dark:from-zinc-900 from-50% to-transparent pt-10 pb-5">
+    <div className="fixed bottom-0 inset-x-0 bg-gradient-to-t from-white dark:from-zinc-900 from-50% to-transparent pt-10 pb-5 z-50">
       <div className="max-w-3xl mx-auto px-4">
         {query && messages.length === 0 && (
           <div className="mb-4">

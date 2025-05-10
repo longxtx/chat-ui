@@ -1,3 +1,6 @@
+// 添加静态导出配置
+export const dynamic = "force-static";
+
 // 模拟从后端获取，用于获取用户信息
 export async function GET() {
   try {

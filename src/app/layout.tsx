@@ -5,7 +5,7 @@ import "./globals.css";
 
 
 export const metadata: Metadata = {
-  title: "Nupco Smart Consulting Advisor",
+  title: "Smart Consulting Advisor",
   description: "每个应用都应该有一个自己的Chat",
 };
 

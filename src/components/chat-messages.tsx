@@ -52,24 +52,7 @@ export function ChatMessages({
     setWelcomeTitle(welcomeTitle)
     setWelcomeMessage(welcomeMessage)
 
-    const fetchUserinfo = async () => {
-      try {
-        // 获取欢迎消息配置
-        const userinfoResponse = await fetch('/api/userinfo')
-        if (userinfoResponse.ok) {
-          const userData = await userinfoResponse.json()
-          console.log('UserName:', userData.username)
-          console.log('UserEmail:', userData.email)
-          console.log('UserID:', userData.id)
-          console.log('UserRole:', userData.is_admin)
-
-        }
-        
-      } catch (error) {
-        console.error('获取用户信息失败:', error)
-      }
-    }
-    fetchUserinfo()
+    
   }, [])
 
   // 自动滚动到底部
